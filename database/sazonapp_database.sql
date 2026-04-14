@@ -716,6 +716,7 @@ ORDER BY p.fecha_hora;
 -- Detalle de un pedido con nombre del producto y categoría.
 CREATE OR REPLACE VIEW vista_detalle_pedido_completo AS
 SELECT
+  dp.id_detalle,
   dp.id_pedido,
   m.numero           AS numero_mesa,
   cat.nombre         AS categoria,
