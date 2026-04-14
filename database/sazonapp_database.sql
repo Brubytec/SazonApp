@@ -200,7 +200,7 @@ INSERT INTO usuario (nombre, email, password, rol) VALUES
   ('Administrador Principal', 'admin@sazonysabor.co',
    '$2b$10$Kd3Q8zXvP1mN4jL7wR2uOuH9bY5cA6eF0gI3hT1iU8oV2pQ4rS6tX', 'administrador'),
   ('Cajero Turno Mañana',    'cajero@sazonysabor.co',
-   '$2b$10$Mb2C9aYuQ3nN5kM8xT1vPuI0cZ6dB7fG1hJ4iK2lU9oW3qR5sT7vY', 'cajero');
+   '$2a$10$wUXg48AppeBg8Ojv6sgJqOZa0iWTIhA8MwJWAK4qRTXH7Kl2ytpAO', 'cajero');
 
 -- ── Mesas ────────────────────────────────────────────────────
 INSERT INTO mesa (numero, capacidad, estado, ubicacion) VALUES
