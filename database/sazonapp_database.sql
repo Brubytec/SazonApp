@@ -420,6 +420,7 @@ END$$
 
 -- ── sp_GenerarFactura ────────────────────────────────────────
 -- Genera la factura, cierra el pedido y libera la mesa.
+-- Es idempotente: si ya existe factura para el pedido, repara estado y retorna la existente.
 CREATE PROCEDURE sp_GenerarFactura(
   IN  p_id_pedido   INT,
   IN  p_id_usuario  INT,
@@ -427,45 +428,62 @@ CREATE PROCEDURE sp_GenerarFactura(
   OUT p_numero_fac  VARCHAR(20)
 )
 BEGIN
-  DECLARE v_total    DECIMAL(10,2);
-  DECLARE v_id_mesa  INT;
-  DECLARE v_estado   VARCHAR(20);
-  DECLARE v_conteo   INT;
+  DECLARE v_total          DECIMAL(10,2);
+  DECLARE v_id_mesa        INT;
+  DECLARE v_estado         VARCHAR(20);
+  DECLARE v_conteo         INT;
+  DECLARE v_ya_facturado   INT DEFAULT 0;
 
-  -- Validar estado del pedido
-  SELECT estado, total, id_mesa INTO v_estado, v_total, v_id_mesa
-    FROM pedido WHERE id_pedido = p_id_pedido;
-
-  IF v_estado != 'abierto' THEN
-    SIGNAL SQLSTATE '45000'
-      SET MESSAGE_TEXT = 'Solo se pueden facturar pedidos en estado abierto';
-  END IF;
-
-  -- Validar que tenga al menos un producto
-  SELECT COUNT(*) INTO v_conteo
-    FROM detalle_pedido WHERE id_pedido = p_id_pedido;
-
-  IF v_conteo = 0 THEN
-    SIGNAL SQLSTATE '45000'
-      SET MESSAGE_TEXT = 'El pedido no tiene productos registrados';
-  END IF;
-
-  -- Generar número de factura consecutivo
-  SET p_numero_fac = CONCAT('FAC-', LPAD(p_id_pedido, 6, '0'));
-
-  -- Insertar factura
-  INSERT INTO factura
-    (id_pedido, id_usuario, total, medio_pago, numero_factura)
-  VALUES
-    (p_id_pedido, p_id_usuario, v_total, p_medio_pago, p_numero_fac);
-
-  -- Cerrar el pedido
-  UPDATE pedido SET estado = 'facturado'
+  -- Si ya existe factura para este pedido, retornar la existente sin error
+  SELECT COUNT(*), MIN(numero_factura)
+    INTO v_ya_facturado, p_numero_fac
+    FROM factura
     WHERE id_pedido = p_id_pedido;
 
-  -- Liberar la mesa
-  UPDATE mesa SET estado = 'disponible'
-    WHERE id_mesa = v_id_mesa;
+  IF v_ya_facturado > 0 THEN
+    -- Reparar estado inconsistente por si quedó "abierto/ocupada"
+    SELECT id_mesa INTO v_id_mesa
+      FROM pedido WHERE id_pedido = p_id_pedido;
+    UPDATE pedido SET estado = 'facturado'
+      WHERE id_pedido = p_id_pedido AND estado = 'abierto';
+    UPDATE mesa SET estado = 'disponible'
+      WHERE id_mesa = v_id_mesa AND estado = 'ocupada';
+  ELSE
+    -- Validar estado del pedido
+    SELECT estado, total, id_mesa INTO v_estado, v_total, v_id_mesa
+      FROM pedido WHERE id_pedido = p_id_pedido;
+
+    IF v_estado != 'abierto' THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Solo se pueden facturar pedidos en estado abierto';
+    END IF;
+
+    -- Validar que tenga al menos un producto
+    SELECT COUNT(*) INTO v_conteo
+      FROM detalle_pedido WHERE id_pedido = p_id_pedido;
+
+    IF v_conteo = 0 THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El pedido no tiene productos registrados';
+    END IF;
+
+    -- Generar número de factura consecutivo
+    SET p_numero_fac = CONCAT('FAC-', LPAD(p_id_pedido, 6, '0'));
+
+    -- Insertar factura
+    INSERT INTO factura
+      (id_pedido, id_usuario, total, medio_pago, numero_factura)
+    VALUES
+      (p_id_pedido, p_id_usuario, v_total, p_medio_pago, p_numero_fac);
+
+    -- Cerrar el pedido
+    UPDATE pedido SET estado = 'facturado'
+      WHERE id_pedido = p_id_pedido;
+
+    -- Liberar la mesa
+    UPDATE mesa SET estado = 'disponible'
+      WHERE id_mesa = v_id_mesa;
+  END IF;
 END$$
 
 
