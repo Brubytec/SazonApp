@@ -35,7 +35,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api', errorMiddleware);
 
 // ── Frontend estático (React build) ───────────────────────────
-const frontendDist = path.join(__dirname, '..', 'public');
+const frontendDist = path.join(__dirname, '..', '..', '..', 'frontend', 'dist');
 app.use(express.static(frontendDist));
 
 // Cualquier ruta no-API sirve index.html (React Router)
