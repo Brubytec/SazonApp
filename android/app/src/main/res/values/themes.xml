@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SazonApp" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/morado</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="colorSecondary">@color/rosa</item>
+        <item name="colorOnSecondary">@color/blanco</item>
+        <item name="colorSecondaryContainer">@color/rosa_suave</item>
+        <item name="android:windowBackground">@color/fondo</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
