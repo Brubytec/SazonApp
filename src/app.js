@@ -8,6 +8,8 @@ const productoRoutes  = require('./routes/productoRoutes');
 const reservaRoutes   = require('./routes/reservaRoutes');
 const pedidoRoutes    = require('./routes/pedidoRoutes');
 const facturaRoutes   = require('./routes/facturaRoutes');
+const gastoRoutes     = require('./routes/gastoRoutes');
+const usuarioRoutes   = require('./routes/usuarioRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -24,6 +26,8 @@ app.use('/api/productos', productoRoutes);
 app.use('/api/reservas',  reservaRoutes);
 app.use('/api/pedidos',   pedidoRoutes);
 app.use('/api/facturas',  facturaRoutes);
+app.use('/api/gastos',    gastoRoutes);
+app.use('/api/usuarios',  usuarioRoutes);
 
 // ── Ruta de salud ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
