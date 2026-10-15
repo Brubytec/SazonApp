@@ -1,69 +1,84 @@
 package com.sazonysabor.sazonapp.data.model
 
-object Constantes {
-    const val IMPUESTO_CONSUMO = 0.08
-    const val PROPINA_SUGERIDA = 0.10
-}
-
+/** Usuario autenticado. El rol viene del JWT del backend (administrador / cajero / mesero). */
 data class Usuario(
+    val id: Int,
     val nombre: String,
-    val correo: String
+    val correo: String,
+    val rol: String
 )
 
-enum class EstadoMesa(val etiqueta: String) {
-    DISPONIBLE("Disponible"),
-    OCUPADA("Ocupada"),
-    RESERVADA("Reservada")
+/** Resultado del login: token JWT + datos del usuario. */
+data class Sesion(
+    val token: String,
+    val usuario: Usuario
+)
+
+/** Mismos valores que el ENUM `mesa.estado` de la base de datos. */
+enum class EstadoMesa(val valorApi: String, val etiqueta: String) {
+    DISPONIBLE("disponible", "Disponible"),
+    OCUPADA("ocupada", "Ocupada"),
+    RESERVADA("reservada", "Reservada");
+
+    companion object {
+        fun desdeApi(valor: String?): EstadoMesa =
+            values().firstOrNull { it.valorApi.equals(valor, ignoreCase = true) } ?: DISPONIBLE
+    }
 }
 
 data class Mesa(
+    val id: Int,
     val numero: Int,
     val capacidad: Int,
+    val ubicacion: String,
     val estado: EstadoMesa,
+    /** Pedido abierto de la mesa (solo si está ocupada). */
+    val idPedido: Int? = null,
     val totalCuenta: Int = 0,
-    val ocupadaDesdeMs: Long? = null
+    val minutosAbierta: Int? = null
 )
-
-enum class CategoriaProducto(val etiqueta: String) {
-    ENTRADAS("Entradas"),
-    PLATOS_FUERTES("Platos fuertes"),
-    BEBIDAS("Bebidas"),
-    POSTRES("Postres"),
-    ACOMPANAMIENTOS("Acompañamientos")
-}
 
 data class Producto(
     val id: Int,
     val nombre: String,
     val descripcion: String,
     val precio: Int,
-    val categoria: CategoriaProducto,
+    /** Nombre de la categoría tal como está en la tabla `categoria`. */
+    val categoria: String,
     val disponible: Boolean = true
 )
 
-data class ItemPedido(
-    val producto: Producto,
-    val cantidad: Int
-) {
-    val subtotal: Int get() = producto.precio * cantidad
+/** Mismos valores que el ENUM `pedido.estado` de la base de datos. */
+enum class EstadoPedido(val valorApi: String, val etiqueta: String) {
+    ABIERTO("abierto", "Abierto"),
+    CERRADO("cerrado", "Cerrado"),
+    FACTURADO("facturado", "Facturado");
+
+    companion object {
+        fun desdeApi(valor: String?): EstadoPedido =
+            values().firstOrNull { it.valorApi.equals(valor, ignoreCase = true) } ?: ABIERTO
+    }
 }
 
-enum class EstadoPedido(val etiqueta: String) {
-    NUEVO("Nuevo"),
-    EN_PREPARACION("En preparación"),
-    LISTO("Listo"),
-    ENTREGADO("Entregado")
-}
+data class LineaPedido(
+    val producto: String,
+    val cantidad: Int,
+    val subtotal: Int
+)
 
+/**
+ * Un pedido tal como lo muestra la app. Sirve para los pedidos abiertos
+ * (vista_pedidos_activos) y para el historial (facturas del día).
+ */
 data class Pedido(
     val id: Int,
-    val numero: Int,
+    /** "#012" para pedidos abiertos, "FAC-000012" para facturados. */
+    val codigo: String,
     val mesaNumero: Int,
-    val items: List<ItemPedido>,
-    val observaciones: String,
+    val lineas: List<LineaPedido>,
     val estado: EstadoPedido,
-    val creadoMs: Long,
-    val cuentaCerrada: Boolean = false
-) {
-    val subtotal: Int get() = items.sumOf { it.subtotal }
-}
+    val minutos: Int?,
+    val total: Int,
+    /** Texto secundario: quién atiende o cómo se pagó. */
+    val nota: String = ""
+)

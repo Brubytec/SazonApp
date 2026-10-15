@@ -7,6 +7,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.sazonysabor.sazonapp.data.local.SesionManager
+import com.sazonysabor.sazonapp.di.ServiceLocator
 import com.sazonysabor.sazonapp.databinding.ActivityLoginBinding
 import com.sazonysabor.sazonapp.ui.main.MainActivity
 import com.sazonysabor.sazonapp.util.aplicarInsetsCompletos
@@ -22,7 +23,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         configurarBarras()
 
-        sesion = SesionManager(this)
+        sesion = ServiceLocator.sesion
         if (sesion.debeRecordar()) {
             irAlInicio()
             return
@@ -47,7 +48,7 @@ class LoginActivity : AppCompatActivity() {
         viewModel.resultado.observe(this) { resultado ->
             when (resultado) {
                 is ResultadoLogin.Exito -> {
-                    sesion.iniciar(resultado.usuario, binding.cbRecordar.isChecked)
+                    sesion.iniciar(resultado.sesion, binding.cbRecordar.isChecked)
                     viewModel.resultadoConsumido()
                     irAlInicio()
                 }
@@ -58,6 +59,11 @@ class LoginActivity : AppCompatActivity() {
                 }
                 null -> Unit
             }
+        }
+
+        viewModel.cargando.observe(this) { cargando ->
+            binding.btnIngresar.isEnabled = !cargando
+            binding.btnIngresar.text = if (cargando) "INGRESANDO..." else "INGRESAR AL SISTEMA"
         }
     }
 
