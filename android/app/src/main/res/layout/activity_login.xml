@@ -125,7 +125,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:gravity="center"
-                    android:text="Modo demo\njuan.carlos@sazon.com  /  Mesero123*"
+                    android:text="Ingresa con el usuario que te asignó el administrador"
                     android:textColor="@color/texto_secundario"
                     android:textSize="12sp" />
             </LinearLayout>

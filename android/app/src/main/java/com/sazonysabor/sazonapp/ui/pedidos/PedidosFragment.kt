@@ -11,9 +11,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.sazonysabor.sazonapp.data.model.EstadoPedido
 import com.sazonysabor.sazonapp.databinding.FragmentPedidosBinding
+import com.sazonysabor.sazonapp.ui.comun.cerrarSesionYVolverAlLogin
+import com.sazonysabor.sazonapp.ui.nuevopedido.NuevoPedidoActivity
 import com.sazonysabor.sazonapp.util.aplicarInsetSuperior
 
-/** Sirve para dos pestañas: "Pedidos" (activos) e "Historial" (entregados). */
+/** Sirve para dos pestañas: "Pedidos" (abiertos) e "Historial" (facturados hoy). */
 class PedidosFragment : Fragment() {
 
     private var _binding: FragmentPedidosBinding? = null
@@ -26,16 +28,17 @@ class PedidosFragment : Fragment() {
 
     private val adapter = PedidosAdapter(
         alTocar = { pedido ->
-            // DEMO: simula el avance en cocina. Se elimina al conectar el backend.
-            if (!esHistorial &&
-                (pedido.estado == EstadoPedido.NUEVO || pedido.estado == EstadoPedido.EN_PREPARACION)
-            ) {
-                viewModel.avanzar(pedido.id, esHistorial)
+            // Un pedido abierto se puede ampliar con más productos.
+            if (pedido.estado == EstadoPedido.ABIERTO) {
+                startActivity(
+                    NuevoPedidoActivity.intent(
+                        contexto = requireContext(),
+                        idMesa = 0,
+                        mesaNumero = pedido.mesaNumero,
+                        idPedido = pedido.id
+                    )
+                )
             }
-        },
-        alEntregar = { pedido ->
-            viewModel.avanzar(pedido.id, esHistorial)
-            Snackbar.make(binding.root, "Pedido entregado a la mesa ${pedido.mesaNumero}", Snackbar.LENGTH_SHORT).show()
         }
     )
 
@@ -55,12 +58,10 @@ class PedidosFragment : Fragment() {
 
         if (esHistorial) {
             binding.tvTitulo.text = "Historial"
-            binding.tvSubtitulo.text = "Pedidos entregados"
-            binding.tvVacio.text = "Aún no hay pedidos entregados"
+            binding.tvSubtitulo.text = "Pedidos facturados hoy"
         } else {
             binding.tvTitulo.text = "Pedidos activos"
-            binding.tvSubtitulo.text = "Demo: toca un pedido para simular el avance en cocina"
-            binding.tvVacio.text = "No hay pedidos activos"
+            binding.tvSubtitulo.text = "Toca un pedido para agregar productos"
         }
 
         binding.rvPedidos.layoutManager = LinearLayoutManager(requireContext())
@@ -68,7 +69,27 @@ class PedidosFragment : Fragment() {
 
         viewModel.pedidos.observe(viewLifecycleOwner) { lista ->
             adapter.submitList(lista)
+            binding.tvVacio.text = if (esHistorial) "Aún no hay pedidos facturados hoy" else "No hay pedidos activos"
             binding.tvVacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        viewModel.cargando.observe(viewLifecycleOwner) { cargando ->
+            if (cargando && adapter.itemCount == 0) {
+                binding.tvVacio.text = "Cargando..."
+                binding.tvVacio.visibility = View.VISIBLE
+            }
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            if (error == null) return@observe
+            viewModel.errorMostrado()
+            if (error.sesionExpirada) {
+                requireActivity().cerrarSesionYVolverAlLogin(error.mensaje)
+            } else {
+                Snackbar.make(binding.root, error.mensaje, Snackbar.LENGTH_LONG)
+                    .setAction("Reintentar") { viewModel.cargar(esHistorial) }
+                    .show()
+            }
         }
     }
 

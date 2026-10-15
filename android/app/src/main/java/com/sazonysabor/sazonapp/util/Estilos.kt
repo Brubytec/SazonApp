@@ -27,10 +27,9 @@ object Estilos {
 
     fun badge(vista: TextView, estado: EstadoPedido) {
         when (estado) {
-            EstadoPedido.NUEVO -> aplicar(vista, estado.etiqueta, R.color.azul_suave, R.color.azul)
-            EstadoPedido.EN_PREPARACION -> aplicar(vista, estado.etiqueta, R.color.ambar_suave, R.color.ambar)
-            EstadoPedido.LISTO -> aplicar(vista, estado.etiqueta, R.color.verde_suave, R.color.verde)
-            EstadoPedido.ENTREGADO -> aplicar(vista, estado.etiqueta, R.color.gris_suave, R.color.gris)
+            EstadoPedido.ABIERTO -> aplicar(vista, estado.etiqueta, R.color.azul_suave, R.color.azul)
+            EstadoPedido.CERRADO -> aplicar(vista, estado.etiqueta, R.color.ambar_suave, R.color.ambar)
+            EstadoPedido.FACTURADO -> aplicar(vista, estado.etiqueta, R.color.verde_suave, R.color.verde)
         }
     }
 }

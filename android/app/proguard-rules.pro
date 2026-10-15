@@ -19,3 +19,5 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Gson lee los DTO por reflexión: no renombrar sus campos.
+-keep class com.sazonysabor.sazonapp.data.remote.dto.** { *; }
