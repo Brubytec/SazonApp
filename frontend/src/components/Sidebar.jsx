@@ -21,6 +21,23 @@ const menuItems = [
   { to: '/menu',     icon: '🍽️', label: 'Menú y Productos' },
 ]
 
+const menuAdmin = [
+  { to: '/gastos',   icon: '🧾', label: 'Inversión y gastos' },
+  { to: '/usuarios', icon: '👥', label: 'Usuarios' },
+]
+
+const estiloLink = ({ isActive }) => ({
+  display:'flex', alignItems:'center', gap:10,
+  padding:'10px 18px', fontSize:13, textDecoration:'none',
+  color: isActive ? '#f9a8d4' : 'var(--sidebar-t)',
+  background: isActive ? 'rgba(190,24,93,.15)' : 'transparent',
+  borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
+  fontWeight: isActive ? 700 : 400,
+  transition: '.12s'
+})
+
+const tituloSeccion = { fontSize:10, fontWeight:700, color:'var(--sidebar-m)', letterSpacing:'.1em', textTransform:'uppercase', padding:'12px 18px 4px' }
+
 export default function Sidebar() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
@@ -45,22 +62,25 @@ export default function Sidebar() {
 
       {/* Menú */}
       <nav style={{ flex:1, padding:'10px 0', overflowY:'auto' }}>
-        <div style={{ fontSize:10, fontWeight:700, color:'var(--sidebar-m)', letterSpacing:'.1em', textTransform:'uppercase', padding:'12px 18px 4px' }}>Principal</div>
+        <div style={tituloSeccion}>Principal</div>
         {menuItems.map(item => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'}
-            style={({ isActive }) => ({
-              display:'flex', alignItems:'center', gap:10,
-              padding:'10px 18px', fontSize:13, textDecoration:'none',
-              color: isActive ? '#f9a8d4' : 'var(--sidebar-t)',
-              background: isActive ? 'rgba(190,24,93,.15)' : 'transparent',
-              borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-              fontWeight: isActive ? 700 : 400,
-              transition: '.12s'
-            })}>
+          <NavLink key={item.to} to={item.to} end={item.to === '/'} style={estiloLink}>
             <span style={{ fontSize:15, width:20, textAlign:'center' }}>{item.icon}</span>
             {item.label}
           </NavLink>
         ))}
+
+        {usuario?.rol === 'administrador' && (
+          <>
+            <div style={tituloSeccion}>Administración</div>
+            {menuAdmin.map(item => (
+              <NavLink key={item.to} to={item.to} style={estiloLink}>
+                <span style={{ fontSize:15, width:20, textAlign:'center' }}>{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       {/* Footer */}
