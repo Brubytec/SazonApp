@@ -24,4 +24,6 @@
     <color name="azul_suave">#DBEAFE</color>
     <color name="gris">#374151</color>
     <color name="gris_suave">#E5E7EB</color>
+    <!-- Crema del logo, fondo del ícono de la app -->
+    <color name="logo_fondo">#F8E6C0</color>
 </resources>

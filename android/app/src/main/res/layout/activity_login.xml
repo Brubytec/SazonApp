@@ -28,14 +28,14 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <TextView
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="128dp"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_logo"
-                    android:gravity="center"
-                    android:text="🍲"
-                    android:textSize="34sp" />
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Logo de Sazón y Sabor"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/logo_sazon" />
 
                 <TextView
                     android:layout_width="wrap_content"

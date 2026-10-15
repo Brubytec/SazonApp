@@ -2,16 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import api from '../services/api'
+import LogoMarca from '../components/LogoMarca'
 
-const Logo = () => (
-  <svg width="50" height="50" viewBox="0 0 48 48">
-    <ellipse cx="24" cy="32" rx="20" ry="6" fill="#9d174d" opacity=".25"/>
-    <path d="M4 28 Q4 14 24 14 Q44 14 44 28 Z" fill="#be185d"/>
-    <path d="M6 28 Q6 16 24 16 Q42 16 42 28 Z" fill="#f472b6"/>
-    <rect x="6" y="27" width="36" height="5" rx="2.5" fill="#be185d"/>
-    <circle cx="15" cy="22" r="3" fill="#fff" opacity=".25"/>
-  </svg>
-)
+const Logo = () => <LogoMarca alto={64} />
 
 export default function Factura() {
   const { idPedido } = useParams()
