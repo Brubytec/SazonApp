@@ -1,0 +1,1510 @@
+{
+  "info": {
+    "name": "SazonApp - Pruebas de API v3 (F-05)",
+    "description": "Rutas reales de la API (prefijo /api, sin /v1; ver DEF-004 del F-05). Los códigos esperados salen de la tabla de la sección 4 del F-05. Si una petición falla por 400/404 inesperado, revise los nombres de campo en los controladores. Las peticiones que escriben solo deben ejecutarse contra la base local. Versión 3: limpia los ids al iniciar, elige sola una mesa disponible y factura el pedido de prueba al final, de modo que puede repetirse.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// RNF-006: los errores no deben exponer trazas técnicas",
+          "if (pm.response.code >= 400) {",
+          "  const texto = pm.response.text();",
+          "  pm.test('Sin traza técnica en el error', function () {",
+          "    pm.expect(texto).to.not.match(/node_modules|at .*\\.js:\\d+/i);",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Salud y autenticación (RF-001)",
+      "description": "Ejecute primero los dos login válidos: guardan los tokens en el entorno. Verifique los nombres de campo del login en backend/src/controllers/authController.js.",
+      "item": [
+        {
+          "name": "Health (público)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Cada ejecución parte limpia: se descartan los ids guardados antes",
+                  "['pedido_id', 'producto_id', 'producto_mesero_id'].forEach(function (v) { pm.environment.set(v, ''); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-001 Login administrador válido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "const j = pm.response.json();",
+                  "const t = j.token || j.accessToken || (j.data && j.data.token);",
+                  "pm.test(\"La respuesta trae un token\", function () { pm.expect(t).to.be.a(\"string\"); });",
+                  "if (t) { pm.environment.set(\"token_admin\", t); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{correo_admin}}\",\n  \"password\": \"{{clave_admin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login mesero válido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "const j = pm.response.json();",
+                  "const t = j.token || j.accessToken || (j.data && j.data.token);",
+                  "pm.test(\"La respuesta trae un token\", function () { pm.expect(t).to.be.a(\"string\"); });",
+                  "if (t) { pm.environment.set(\"token_mesero\", t); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{correo_mesero}}\",\n  \"password\": \"{{clave_mesero}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-002 Credenciales incorrectas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 401\", function () { pm.expect([401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{correo_admin}}\",\n  \"password\": \"clave-incorrecta-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Datos inválidos (sin password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{correo_admin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 Mesas y pedidos (RF-006, RF-007, RF-008)",
+      "description": "",
+      "item": [
+        {
+          "name": "Listar mesas con token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "// Elegir automáticamente una mesa disponible para el caso 'Abrir pedido'",
+                  "let arr = [];",
+                  "try { const j = pm.response.json(); arr = Array.isArray(j) ? j : (j.data || j.mesas || []); } catch (e) {}",
+                  "const libre = arr.find(function (m) { return String(m.estado || '').toLowerCase().indexOf('disp') === 0; });",
+                  "pm.test('Existe al menos una mesa disponible', function () { pm.expect(libre, 'no hay mesas disponibles en la base local').to.not.be.undefined; });",
+                  "if (libre) { pm.environment.set('id_mesa_libre', String(libre.id_mesa !== undefined ? libre.id_mesa : libre.id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mesas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mesas"
+              ]
+            },
+            "description": "Además de verificar el 200, guarda en id_mesa_libre la primera mesa con estado disponible."
+          }
+        },
+        {
+          "name": "Listar mesas sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 401\", function () { pm.expect([401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mesas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mesas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir pedido en mesa disponible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 201\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  try {",
+                  "    const j = pm.response.json();",
+                  "    const d = j.data || j;",
+                  "    const id = d.id || d.id_pedido || d.id_producto || d.insertId || (d.pedido && (d.pedido.id || d.pedido.id_pedido)) || (d.producto && (d.producto.id || d.producto.id_producto));",
+                  "    if (id) { pm.environment.set(\"pedido_id\", String(id)); }",
+                  "  } catch (e) {}",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            },
+            "description": "Escribe en la base local. id_mesa_libre debe ser una mesa disponible.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_mesa\": \"{{id_mesa_libre}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Abrir pedido sin id_mesa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pedido inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 404\", function () { pm.expect([404]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar producto al pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "productos"
+              ]
+            },
+            "description": "Confirme el nombre del campo id_producto en el controlador de pedidos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_producto\": 1,\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-011 Agregar producto con cantidad 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_producto\": 1,\n  \"cantidad\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pedidos activos con token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/activos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "activos"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Productos (RF-003, RF-002)",
+      "description": "",
+      "item": [
+        {
+          "name": "CP-006 Crear producto (administrador)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 201\", function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  try {",
+                  "    const j = pm.response.json();",
+                  "    const d = j.data || j;",
+                  "    const id = d.id || d.id_pedido || d.id_producto || d.insertId || (d.pedido && (d.pedido.id || d.pedido.id_pedido)) || (d.producto && (d.producto.id || d.producto.id_producto));",
+                  "    if (id) { pm.environment.set(\"producto_id\", String(id)); }",
+                  "  } catch (e) {}",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Producto PRUEBA\",\n  \"precio\": 12000,\n  \"id_categoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-007 Crear producto sin precio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Producto PRUEBA\",\n  \"id_categoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Producto inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 404\", function () { pm.expect([404]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Limpieza: eliminar producto de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200, 404\", function () { pm.expect([200, 404]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos/{{producto_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos",
+                "{{producto_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-005 Crear producto con token de mesero (F-03 exige 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 403\", function () { pm.expect([403]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  try {",
+                  "    const j = pm.response.json();",
+                  "    const d = j.data || j;",
+                  "    const id = d.id || d.id_pedido || d.id_producto || d.insertId || (d.pedido && (d.pedido.id || d.pedido.id_pedido)) || (d.producto && (d.producto.id || d.producto.id_producto));",
+                  "    if (id) { pm.environment.set(\"producto_mesero_id\", String(id)); }",
+                  "  } catch (e) {}",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos"
+              ]
+            },
+            "description": "Si responde 201 es el defecto DEF-001 (no hay restricción por rol). Es un hallazgo válido: no cambie el código esperado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Producto PRUEBA\",\n  \"precio\": 12000,\n  \"id_categoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Limpieza: eliminar producto creado por el mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200, 404, 405\", function () { pm.expect([200, 404, 405]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/productos/{{producto_mesero_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "productos",
+                "{{producto_mesero_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Reservas (RF-004, RF-005)",
+      "description": "",
+      "item": [
+        {
+          "name": "Reserva sin nombre_cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_mesa\": 1,\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reservas sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 401\", function () { pm.expect([401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Facturas (RF-009, RF-010)",
+      "description": "",
+      "item": [
+        {
+          "name": "Facturas sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 401\", function () { pm.expect([401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/facturas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Factura inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 404\", function () { pm.expect([404]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/facturas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-016/RF-009 Facturas con token de mesero (F-03 exige 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 403\", function () { pm.expect([403]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/facturas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            },
+            "description": "Si responde 200 es parte de DEF-001."
+          }
+        },
+        {
+          "name": "Factura con medio de pago inválido (cheque)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/facturas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pedido\": \"{{pedido_id}}\",\n  \"medio_pago\": \"cheque\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Regla 1 de la tabla de decisión 2.3: medio de pago no permitido, rechaza sin facturar."
+          }
+        },
+        {
+          "name": "CP-016 Generar factura del pedido de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 201\", function () { pm.expect([201]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/facturas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pedido\": \"{{pedido_id}}\",\n  \"medio_pago\": \"efectivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Regla 4 de la tabla de decisión 2.3: genera la factura, factura el pedido y libera la mesa. Escribe en la base local."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Usuarios y gastos (módulos del PR #2)",
+      "description": "Requieren la migración del PR #2 aplicada en la base local.",
+      "item": [
+        {
+          "name": "Usuarios como administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Usuarios con token de mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 403\", function () { pm.expect([403]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Usuarios sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 401\", function () { pm.expect([401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Usuario con contraseña corta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario PRUEBA\",\n  \"email\": \"prueba.corta@sazonysabor.co\",\n  \"password\": \"1234567\",\n  \"rol\": \"mesero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Usuario con correo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 409\", function () { pm.expect([409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Duplicado PRUEBA\",\n  \"email\": \"{{correo_admin}}\",\n  \"password\": \"PruebaF05*2026\",\n  \"rol\": \"mesero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Gastos con token de mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 403\", function () { pm.expect([403]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gastos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gastos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Gasto con monto 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 400\", function () { pm.expect([400]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gastos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gastos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Gasto inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 404\", function () { pm.expect([404]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gastos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gastos",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen del dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Código esperado: 200\", function () { pm.expect([200]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "resumen"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
