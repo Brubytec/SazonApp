@@ -2,19 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import LogoMarca from '../components/LogoMarca'
 
-const Logo = () => (
-  <svg width="72" height="72" viewBox="0 0 48 48">
-    <ellipse cx="24" cy="32" rx="20" ry="6" fill="#9d174d" opacity=".25"/>
-    <path d="M4 28 Q4 14 24 14 Q44 14 44 28 Z" fill="#be185d"/>
-    <path d="M6 28 Q6 16 24 16 Q42 16 42 28 Z" fill="#f472b6"/>
-    <rect x="6" y="27" width="36" height="5" rx="2.5" fill="#be185d"/>
-    <path d="M18 11 Q19 8 18 5" stroke="#f9a8d4" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <path d="M24 10 Q25 7 24 4" stroke="#f9a8d4" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <path d="M30 11 Q31 8 30 5" stroke="#f9a8d4" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <circle cx="15" cy="22" r="3" fill="#fff" opacity=".25"/>
-  </svg>
-)
+const Logo = () => <LogoMarca alto={130} />
 
 export default function Login() {
   const [form, setForm]     = useState({ email: '', password: '' })
